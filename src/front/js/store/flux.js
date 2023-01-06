@@ -1,54 +1,61 @@
 const getState = ({ getStore, getActions, setStore }) => {
-	return {
-		store: {
-			message: null,
-			demo: [
-				{
-					title: "FIRST",
-					background: "white",
-					initial: "white"
-				},
-				{
-					title: "SECOND",
-					background: "white",
-					initial: "white"
-				}
-			]
-		},
-		actions: {
-			// Use getActions to call a function within a fuction
-			exampleFunction: () => {
-				getActions().changeColor(0, "green");
-			},
+  return {
+    store: {},
+    actions: {
+      // Use getActions to call a function within a fuction
+      //https://starwars-visualguide.com/assets/img/characters/1.jpg
+      getList: async (element, page = 1, limit = 12) => {
+        try {
+          let response = await fetch(
+            `https://www.swapi.tech/api/${element}?page=${page}&limit=${limit}`
+          );
+          if (!response.ok) {
+            console.error(`Error en la petición: ${response.statusText}`);
+            return null;
+          } else {
+            let data = await response.json();
+            let newStore = {};
+            newStore[element] = data.result || data.results;
+            //Agregar imagenes a la data en base al tipo de elemento y el id
+            newStore[element] = newStore[element].map((item) => {
+              item.img = `https://starwars-visualguide.com/assets/img/${
+                element == "people" ? "characters" : element
+              }/${item.uid}.jpg`;
+              return item;
+            });
+            setStore(newStore);
+            return { pages: data.total_pages };
+          }
+        } 
+          catch (error) {
+          console.error(`Error en la peticion: ${error}`);
+          return null;
+        }
+      },
 
-			getMessage: async () => {
-				try{
-					// fetching data from the backend
-					const resp = await fetch(process.env.BACKEND_URL + "/api/hello")
-					const data = await resp.json()
-					setStore({ message: data.message })
-					// don't forget to return something, that is how the async resolves
-					return data;
-				}catch(error){
-					console.log("Error loading message from backend", error)
-				}
-			},
-			changeColor: (index, color) => {
-				//get the store
-				const store = getStore();
-
-				//we have to loop the entire demo array to look for the respective index
-				//and change its color
-				const demo = store.demo.map((elm, i) => {
-					if (i === index) elm.background = color;
-					return elm;
-				});
-
-				//reset the global store
-				setStore({ demo: demo });
-			}
-		}
-	};
+      /* Elements */
+      getDetail: async (element, id) => {
+        try {
+          let response = await fetch(
+            `https://www.swapi.tech/api/${element}/${id}`
+          );
+          if (!response.ok) {
+            console.error(`Error en la petición: ${response.statusText}`);
+            return null;
+          } else {
+            let data = await response.json();
+            // let newStore = {};
+            // newStore[element + "detail"] = data.result || data.results;
+            // setStore(newStore);
+            return data.result || data.results;
+          }
+        } catch (error) {
+          console.error(`Error en la peticion: ${error}`);
+          return null;
+        }
+      },
+    },
+  };
 };
 
 export default getState;
